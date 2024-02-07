@@ -4,6 +4,9 @@ from database.utils import connect_to_database
 import os
 import time
 from dotenv import load_dotenv
+from requests.adapters import HTTPAdapter
+from urllib3.util import Retry
+from requests import Session
 
 load_dotenv()
 
@@ -14,6 +17,18 @@ connection, cursor = connect_to_database()
 auth_credentials = HTTPBasicAuth(os.getenv("LOGIN_MOYSKLAD"), os.getenv("PASSWORD_MOYSKLAD"))
 
 
+def setup_session():
+    session = Session()
+    retries = Retry(
+        total=5,
+        backoff_factor=1,
+        status_forcelist=[500, 502, 503, 504],
+        allowed_methods=["GET", "POST"]  # Используйте allowed_methods вместо method_whitelist для новых версий
+    )
+    session.mount('https://', HTTPAdapter(max_retries=retries))
+    return session
+
+session = setup_session()
 
 
 def add_or_replace_to_products(product_name, image, price, quantity, description, category_name,
@@ -46,7 +61,7 @@ def add_or_replace_to_products(product_name, image, price, quantity, description
 
 def get_photo(url: str, title: str):
     try:
-        response = requests.get(url, auth=auth_credentials, timeout=(10, 30))
+        response = session.get(url, auth=auth_credentials, timeout=(10, 30))
         image = response.content
         if "/" in title:
             title = title.replace("/", " ")
@@ -62,7 +77,7 @@ def get_photo(url: str, title: str):
 
 def fetch_data(url):
     while url:
-        response = requests.get(url, auth=auth_credentials, timeout=(10, 30))
+        response = session.get(url, auth=auth_credentials, timeout=(10, 30))
 
         data = response.json()
         for dict_ in data["rows"]:
@@ -72,7 +87,7 @@ def fetch_data(url):
             """Для получения описания продукта и фото след три переменные"""
             product_id = dict_["meta"]["href"].split("/")[-1]
             product_url = f"https://api.moysklad.ru/api/remap/1.2/entity/product/{product_id}"
-            product_response = requests.get(product_url, auth=auth_credentials, timeout=(10, 30))
+            product_response = session.get(product_url, auth=auth_credentials, timeout=(10, 30))
             """___________________________________________________________"""
 
             pathname_splitted = dict_["folder"]["pathName"][18:].split("/")
@@ -96,7 +111,7 @@ def fetch_data(url):
                 description = product_details.get("description", "")
                 image_url = product_details.get("images", {}).get("meta", {}).get("href")
                 try:
-                    image_url_download = requests.get(image_url, auth=auth_credentials, timeout=(10, 30)).json()["rows"][0].get(
+                    image_url_download = session.get(image_url, auth=auth_credentials, timeout=(10, 30)).json()["rows"][0].get(
                         "meta",
                         {}).get("downloadHref", {})
                     time.sleep(0.07)
