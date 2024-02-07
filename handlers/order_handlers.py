@@ -34,7 +34,11 @@ async def create_order(message: Message):
 async def check_location(message: Message, state: FSMContext):
     chat_id = message.chat.id
     async with state.proxy() as data:
-        data["location"] = message.location
+        data["location"] = {
+            "latitude": message.location.latitude,
+            "longitude": message.location.longitude
+        }
+        print(type(data["location"]))
         await bot.send_message(chat_id, "Отправьте свой номер телефона", reply_markup=generate_request_contact_menu())
         await OrderForm.phone_number.set()
 

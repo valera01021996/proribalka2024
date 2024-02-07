@@ -16,8 +16,8 @@ async def start(message: Message, state: FSMContext):
     username = message.from_user.username
     full_name = message.chat.full_name
     current_state = await state.get_state()
-    if current_state is None:
-        return
+    # if current_state is None:
+    #     return
     await state.finish()
     await register_user(username, full_name, chat_id)
     print("salam")

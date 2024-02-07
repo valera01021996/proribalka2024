@@ -1,7 +1,7 @@
 from config import bot, dp
 from aiogram.types import Message, CallbackQuery
 from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters import Text, state
+from aiogram.dispatcher.filters import Text
 from keyboards.main_menu_keyboards import *
 from database.tools.product_tools import ProductTools
 
@@ -141,20 +141,24 @@ async def show_products_menu(message: Message, state: FSMContext):
                                reply_markup=await generate_brands_menu_without_subcategories(category_name))
     elif message.text == "◀   Назад":
         await bot.send_message(chat_id, "Выберите бренд:", reply_markup=await generate_brands_menu(subcategory_name))
-    elif message.text in ProductTools.SERIES and DBTools().product_tools.get_types(brand_name, serie_name) == ['']:
+    elif message.text in ProductTools.SERIES and DBTools().product_tools.get_types(category_name, brand_name, serie_name) == ['']:
         await bot.send_message(chat_id, "Выберите продукт",
                                reply_markup=await generate_products_menu_with_series(brand_name, serie_name))
     elif message.text in ProductTools.SERIES:
         await bot.send_message(chat_id, "Выберите тип товара",
-                               reply_markup=await generate_types_menu(brand_name, serie_name))
+                               reply_markup=await generate_types_menu(category_name, brand_name, serie_name))
 
 
 @dp.message_handler(state=MenuLevels.types_menu)
 async def show_types2_menu(message: Message, state: FSMContext):
     chat_id = message.chat.id
     data = await state.get_data()
+    subcategory_name = ""
     await state.update_data(type_name=message.text)
-    subcategory_name = data["subcategory_name"]
+    try:
+        subcategory_name = data["subcategory_name"]
+    except Exception as ex:
+        print(ex)
     brand_name = data["brand_name"]
     serie_name = data["serie_name"]
     type_name = message.text
@@ -177,12 +181,13 @@ async def show_product_menu_with_types(message: Message, state: FSMContext):
     chat_id = message.chat.id
     await state.update_data(type2_name=message.text)
     data = await state.get_data()
+    category_name = data["category_name"]
     brand_name = data["brand_name"]
     serie_name = data["serie_name"]
     type_name = data["type_name"]
     type_name2 = message.text
     if message.text == "◀   Назад":
-        await bot.send_message(chat_id, "Выберите тип", reply_markup=await generate_types_menu(brand_name, serie_name))
+        await bot.send_message(chat_id, "Выберите тип", reply_markup=await generate_types_menu(category_name, brand_name, serie_name))
 
     elif message.text in ProductTools.TYPES2:
         await bot.send_message(chat_id, "Выберите товар",
@@ -263,16 +268,16 @@ async def show_product_detail(message: Message, state: FSMContext):
 
     elif message.text == "◀   Назад" and DBTools().product_tools.get_series(category_name,
                                                                             brand_name) != [
-        ''] and DBTools().product_tools.get_types(
+        ''] and DBTools().product_tools.get_types(category_name,
         brand_name, serie_name) == ['']:
         await bot.send_message(chat_id, "Выберите серию товара",
                                reply_markup=await generate_series_menu(subcategory_name, brand_name))
 
-    elif message.text == "◀   Назад" and DBTools().product_tools.get_types(brand_name,
+    elif message.text == "◀   Назад" and DBTools().product_tools.get_types(category_name, brand_name,
                                                                            serie_name) != [''] and DBTools().product_tools.get_types2(
         serie_name, type_name) == ['']:
         await bot.send_message(chat_id, "Выберите тип товара",
-                               reply_markup=await generate_types_menu(brand_name, serie_name))
+                               reply_markup=await generate_types_menu(category_name, brand_name, serie_name))
 
     elif message.text == "◀   Назад" and DBTools().product_tools.get_types2(serie_name, type_name) != ['']:
         await bot.send_message(chat_id, "Выберите второй тип",

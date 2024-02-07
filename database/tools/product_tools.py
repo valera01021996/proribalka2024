@@ -175,12 +175,12 @@ class ProductTools(BaseTools):
         product: tuple = self.cursor.fetchone()
         return product
 
-    def get_types(self, brand_name: str, serie_name: str):
+    def get_types(self, category_name: str, brand_name: str, serie_name: str):
         self.cursor.execute("""SELECT DISTINCT type_name
             FROM products
-            WHERE brand_name = %s and serie_name = %s
+            WHERE category_name = %s and brand_name = %s and serie_name = %s
             ORDER BY type_name ASC
-        """, (brand_name, serie_name))
+        """, (category_name, brand_name, serie_name))
         types = []
         for type_name in self.cursor.fetchall():
             types.append(*type_name)

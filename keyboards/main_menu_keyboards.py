@@ -100,9 +100,9 @@ async def generate_series_menu(subcategory_name: str, brand_name: str):
     return markup
 
 
-async def generate_types_menu(brand_name: str, serie_name: str):
+async def generate_types_menu(category_name: str, brand_name: str, serie_name: str):
     markup = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-    types = DBTools().product_tools.get_types(brand_name, serie_name)
+    types = DBTools().product_tools.get_types(category_name, brand_name, serie_name)
     markup.add(*types)
     markup.row(
         KeyboardButton(text="◀   Назад"),

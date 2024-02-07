@@ -46,7 +46,7 @@ def add_or_replace_to_products(product_name, image, price, quantity, description
 
 def get_photo(url: str, title: str):
     try:
-        response = requests.get(url, auth=auth_credentials)
+        response = requests.get(url, auth=auth_credentials, timeout=(10, 30))
         image = response.content
         if "/" in title:
             title = title.replace("/", " ")
@@ -62,7 +62,7 @@ def get_photo(url: str, title: str):
 
 def fetch_data(url):
     while url:
-        response = requests.get(url, auth=auth_credentials)
+        response = requests.get(url, auth=auth_credentials, timeout=(10, 30))
 
         data = response.json()
         for dict_ in data["rows"]:
@@ -72,7 +72,7 @@ def fetch_data(url):
             """Для получения описания продукта и фото след три переменные"""
             product_id = dict_["meta"]["href"].split("/")[-1]
             product_url = f"https://api.moysklad.ru/api/remap/1.2/entity/product/{product_id}"
-            product_response = requests.get(product_url, auth=auth_credentials)
+            product_response = requests.get(product_url, auth=auth_credentials, timeout=(10, 30))
             """___________________________________________________________"""
 
             pathname_splitted = dict_["folder"]["pathName"][18:].split("/")
@@ -96,7 +96,7 @@ def fetch_data(url):
                 description = product_details.get("description", "")
                 image_url = product_details.get("images", {}).get("meta", {}).get("href")
                 try:
-                    image_url_download = requests.get(image_url, auth=auth_credentials).json()["rows"][0].get(
+                    image_url_download = requests.get(image_url, auth=auth_credentials, timeout=(10, 30)).json()["rows"][0].get(
                         "meta",
                         {}).get("downloadHref", {})
                     time.sleep(0.07)
