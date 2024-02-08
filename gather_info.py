@@ -31,14 +31,15 @@ def setup_session():
 session = setup_session()
 
 
-def add_or_replace_to_products(product_name, image, price, quantity, description, category_name,
+def add_or_replace_to_products(product_id, product_name, image, price, quantity, description, category_name,
                                subcategory_name, brand_name, serie_name, type_name, type_name2):
     try:
-        cursor.execute(f"""INSERT INTO products (product_name, image, price, quantity, description, category_name,
+        cursor.execute(f"""INSERT INTO products (product_id, product_name, image, price, quantity, description, category_name,
          subcategory_name, brand_name, serie_name, type_name, type_name2)
                 VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON DUPLICATE KEY UPDATE
+                product_name= VALUES(product_name),
                 description= VALUES(description),
                 image= VALUES(image),
                 price= VALUES(price),
@@ -50,7 +51,7 @@ def add_or_replace_to_products(product_name, image, price, quantity, description
                 type_name= VALUES (type_name),
                 type_name2= VALUES (type_name2)
             """, (
-            product_name, image, price, quantity, description, category_name, subcategory_name, brand_name,
+            product_id, product_name, image, price, quantity, description, category_name, subcategory_name, brand_name,
             serie_name, type_name, type_name2))
 
     except Exception as ex:
@@ -173,7 +174,7 @@ def fetch_data(url):
                 type_name = pathname_splitted[4]
                 type_name2 = last_directory
 
-            add_or_replace_to_products(product_name, image, price, quantity, description, category_name,
+            add_or_replace_to_products(product_id, product_name, image, price, quantity, description, category_name,
                                        subcategory_name, brand_name, serie_name, type_name, type_name2)
         try:
             url = data["meta"]["nextHref"]
