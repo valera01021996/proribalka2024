@@ -141,9 +141,11 @@ async def show_products_menu(message: Message, state: FSMContext):
                                reply_markup=await generate_brands_menu_without_subcategories(category_name))
     elif message.text == "◀   Назад":
         await bot.send_message(chat_id, "Выберите бренд:", reply_markup=await generate_brands_menu(subcategory_name))
-    elif message.text in ProductTools.SERIES and DBTools().product_tools.get_types(category_name, brand_name, serie_name) == ['']:
+    elif message.text in ProductTools.SERIES and DBTools().product_tools.get_types(category_name, brand_name,
+                                                                                   serie_name) == ['']:
         await bot.send_message(chat_id, "Выберите продукт",
-                               reply_markup=await generate_products_menu_with_series(brand_name, serie_name))
+                               reply_markup=await generate_products_menu_with_series(category_name, brand_name,
+                                                                                     serie_name))
     elif message.text in ProductTools.SERIES:
         await bot.send_message(chat_id, "Выберите тип товара",
                                reply_markup=await generate_types_menu(category_name, brand_name, serie_name))
@@ -187,7 +189,8 @@ async def show_product_menu_with_types(message: Message, state: FSMContext):
     type_name = data["type_name"]
     type_name2 = message.text
     if message.text == "◀   Назад":
-        await bot.send_message(chat_id, "Выберите тип", reply_markup=await generate_types_menu(category_name, brand_name, serie_name))
+        await bot.send_message(chat_id, "Выберите тип",
+                               reply_markup=await generate_types_menu(category_name, brand_name, serie_name))
 
     elif message.text in ProductTools.TYPES2:
         await bot.send_message(chat_id, "Выберите товар",
@@ -269,12 +272,13 @@ async def show_product_detail(message: Message, state: FSMContext):
     elif message.text == "◀   Назад" and DBTools().product_tools.get_series(category_name,
                                                                             brand_name) != [
         ''] and DBTools().product_tools.get_types(category_name,
-        brand_name, serie_name) == ['']:
+                                                  brand_name, serie_name) == ['']:
         await bot.send_message(chat_id, "Выберите серию товара",
                                reply_markup=await generate_series_menu(subcategory_name, brand_name))
 
     elif message.text == "◀   Назад" and DBTools().product_tools.get_types(category_name, brand_name,
-                                                                           serie_name) != [''] and DBTools().product_tools.get_types2(
+                                                                           serie_name) != [
+        ''] and DBTools().product_tools.get_types2(
         serie_name, type_name) == ['']:
         await bot.send_message(chat_id, "Выберите тип товара",
                                reply_markup=await generate_types_menu(category_name, brand_name, serie_name))

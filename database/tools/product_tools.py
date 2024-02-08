@@ -131,12 +131,12 @@ class ProductTools(BaseTools):
         ProductTools.PRODUCTS = products
         return products
 
-    def get_products_with_series(self, brand_name: str, serie_name: str):
+    def get_products_with_series(self, category_name: str,  brand_name: str, serie_name: str):
         self.cursor.execute("""SELECT DISTINCT product_name
             FROM products
-            WHERE brand_name = %s and serie_name = %s
+            WHERE category_name = %s and brand_name = %s and serie_name = %s
             ORDER BY product_name ASC
-        """, (brand_name, serie_name))
+        """, (category_name, brand_name, serie_name))
         products = []
         for product in self.cursor.fetchall():
             products.append(*product)
