@@ -7,7 +7,7 @@ from aiogram.contrib.fsm_storage.redis import RedisStorage2
 load_dotenv()
 
 ADMINS = [
-    -985070948,
+    -1001998831051,
     43031788,
     778133858,
     5112368258
