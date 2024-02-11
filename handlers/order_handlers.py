@@ -8,7 +8,6 @@ from keyboards.order_keyboards import *
 from keyboards.main_menu_keyboards import generate_main_menu
 from find_address import get_address_via_coords
 
-
 class OrderForm(StatesGroup):
     cart_id = State()
     location = State()
@@ -38,7 +37,6 @@ async def check_location(message: Message, state: FSMContext):
             "latitude": message.location.latitude,
             "longitude": message.location.longitude
         }
-        print(type(data["location"]))
         await bot.send_message(chat_id, "Отправьте свой номер телефона", reply_markup=generate_request_contact_menu())
         await OrderForm.phone_number.set()
 
@@ -64,13 +62,13 @@ async def success_confirm(message: Message, state: FSMContext):
     user_id = DBTools().user_tools.get_user_id(chat_id)
     cart_products = DBTools().cart_tools.get_cart_products(user_id)
     cart_id = DBTools().cart_tools.get_active_cart(user_id)[0]
-    print(cart_products)
     if message.text == "Да":
         await state.finish()
         text_admins = await formatted_message_for_admins(data, full_name, cart_products)
         await bot.send_message(chat_id, "Ваш заказ принят😊 Ожидайте звонка", reply_markup=generate_main_menu())
         for admin_id in ADMINS:
             await bot.send_message(admin_id, text_admins)
+            await bot.send_location(admin_id, latitude=data["location"]["latitude"], longitude=data["location"]["longitude"])
         DBTools().order_tools.create_order(cart_id)
         DBTools().cart_tools.change_order_status(cart_id)
         DBTools().cart_tools.register_cart(user_id)
