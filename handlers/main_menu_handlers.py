@@ -227,6 +227,8 @@ async def show_product_detail(message: Message, state: FSMContext):
     if message.text in ProductTools.PRODUCTS:
         pk, product_name, description, image, price, quantity = DBTools().product_tools.get_product_detail_info(
             message.text)
+        price = format_price(price)
+
         try:
             with open(image, "rb") as photo:
                 await bot.send_photo(chat_id, photo, caption=f"<b>{product_name}</b>\n\n"
@@ -319,3 +321,10 @@ async def edit_count_product(call: CallbackQuery):
                                                                                                              quantity,
                                                                                                              current_qty
                                                                                                              ))
+
+
+def format_price(price_str):
+    price_str = price_str.replace(" ", "")
+    formatted_price = f"{int(price_str):,}".replace(",", " ")
+    return formatted_price
+
