@@ -28,6 +28,7 @@ def setup_session():
     session.mount('https://', HTTPAdapter(max_retries=retries))
     return session
 
+
 session = setup_session()
 
 
@@ -77,111 +78,118 @@ def get_photo(url: str, title: str):
 
 
 def fetch_data(url):
-    while url:
-        response = session.get(url, auth=auth_credentials, timeout=(10, 30))
+    while True:
+        while url:
+            response = session.get(url, auth=auth_credentials, timeout=(10, 30))
 
-        data = response.json()
-        for dict_ in data["rows"]:
-            if "Б/У" in dict_["folder"]["pathName"] or "Материалы для Производства" in dict_["folder"]["pathName"]:
-                continue
+            data = response.json()
+            for dict_ in data["rows"]:
+                if "Б/У" in dict_["folder"]["pathName"] or "Материалы для Производства" in dict_["folder"]["pathName"]:
+                    continue
 
-            """Для получения описания продукта и фото след три переменные"""
-            product_id = dict_["meta"]["href"].split("/")[-1]
-            product_url = f"https://api.moysklad.ru/api/remap/1.2/entity/product/{product_id}"
-            product_response = session.get(product_url, auth=auth_credentials, timeout=(10, 30))
-            """___________________________________________________________"""
+                """Для получения описания продукта и фото след три переменные"""
+                product_id = dict_["meta"]["href"].split("/")[-1]
+                print(product_id)
+                product_url = f"https://api.moysklad.ru/api/remap/1.2/entity/product/{product_id}"
+                product_response = session.get(product_url, auth=auth_credentials, timeout=(10, 30))
+                """___________________________________________________________"""
 
-            pathname_splitted = dict_["folder"]["pathName"][18:].split("/")
-            last_directory = dict_["folder"]["name"]
-            product_name = dict_["name"]
-            price = dict_["salePrice"] // 100
-            quantity = dict_["stock"]
-            category_name = ""
-            subcategory_name = ""
-            brand_name = ""
-            serie_name = ""
-            type_name = ""
-            type_name2 = ""
-            description = ""
-            image = ""
+                pathname_splitted = dict_["folder"]["pathName"][18:].split("/")
+                last_directory = dict_["folder"]["name"]
+                product_name = dict_["name"]
+                price = dict_["salePrice"] // 100
+                quantity = dict_["stock"]
+                category_name = ""
+                subcategory_name = ""
+                brand_name = ""
+                serie_name = ""
+                type_name = ""
+                type_name2 = ""
+                description = ""
+                image = ""
 
-            """Получаем описание и фотографию"""
-            if product_response.status_code == 200:
-                print("Success")
-                product_details = product_response.json()
-                description = product_details.get("description", "")
-                image_url = product_details.get("images", {}).get("meta", {}).get("href")
-                try:
-                    image_url_download = session.get(image_url, auth=auth_credentials, timeout=(10, 30)).json()["rows"][0].get(
-                        "meta",
-                        {}).get("downloadHref", {})
-                    time.sleep(0.07)
+                """Получаем описание и фотографию"""
+                if product_response.status_code == 200:
+                    print("Success")
+                    product_details = product_response.json()
+                    description = product_details.get("description", "")
+                    image_url = product_details.get("images", {}).get("meta", {}).get("href")
+                    try:
+                        image_url_download = \
+                        session.get(image_url, auth=auth_credentials, timeout=(10, 30)).json()["rows"][0].get(
+                            "meta",
+                            {}).get("downloadHref", {})
 
-                    image = get_photo(image_url_download, product_name)
-                except Exception as ex:
-                    print(f"Ошибка при получении фото {ex}")
-            """__________________________________________"""
+                        image = get_photo(image_url_download, product_name)
+                    except Exception as ex:
+                        print(f"Ошибка при получении фото {ex}")
+                """__________________________________________"""
 
-            if len(pathname_splitted) == 1 and pathname_splitted[0] == "Коптилки" or pathname_splitted[0] == "Пули" \
-                    or pathname_splitted[0] == "Садки и Подсаки":
-                category_name = pathname_splitted[0]
-                brand_name = last_directory
-            elif len(
-                    pathname_splitted) == 1 and last_directory == "Креветочницы" or last_directory == "Подарочные Сертификаты PROрыбалка" \
-                    or last_directory == "Рогатки":
+                if len(pathname_splitted) == 1 and pathname_splitted[0] == "Коптилки" or pathname_splitted[0] == "Пули" \
+                        or pathname_splitted[0] == "Садки и Подсаки":
+                    category_name = pathname_splitted[0]
+                    brand_name = last_directory
+                elif len(
+                        pathname_splitted) == 1 and last_directory == "Креветочницы" or last_directory == "Подарочные Сертификаты PROрыбалка" \
+                        or last_directory == "Рогатки":
 
-                category_name = last_directory
+                    category_name = last_directory
 
-            elif len(pathname_splitted) == 1:
+                elif len(pathname_splitted) == 1:
 
-                category_name = pathname_splitted[0]
-                subcategory_name = last_directory
+                    category_name = pathname_splitted[0]
+                    subcategory_name = last_directory
 
-            elif len(pathname_splitted) == 2 and pathname_splitted[0] == "Катушки":
-                category_name = pathname_splitted[0]
-                brand_name = pathname_splitted[1]
-                serie_name = last_directory
+                elif len(pathname_splitted) == 2 and pathname_splitted[0] == "Катушки":
+                    category_name = pathname_splitted[0]
+                    brand_name = pathname_splitted[1]
+                    serie_name = last_directory
 
-            elif len(pathname_splitted) == 2:
-                category_name = pathname_splitted[0]
-                subcategory_name = pathname_splitted[1]
-                brand_name = last_directory
+                elif len(pathname_splitted) == 2:
+                    category_name = pathname_splitted[0]
+                    subcategory_name = pathname_splitted[1]
+                    brand_name = last_directory
 
-            elif len(pathname_splitted) == 3 and pathname_splitted[0] == "Катушки":
-                category_name = pathname_splitted[0]
-                brand_name = pathname_splitted[1]
-                serie_name = pathname_splitted[2]
-                type_name = last_directory
+                elif len(pathname_splitted) == 3 and pathname_splitted[0] == "Катушки":
+                    category_name = pathname_splitted[0]
+                    brand_name = pathname_splitted[1]
+                    serie_name = pathname_splitted[2]
+                    type_name = last_directory
 
-            elif len(pathname_splitted) == 3:
-                category_name = pathname_splitted[0]
-                subcategory_name = pathname_splitted[1]
-                brand_name = pathname_splitted[2]
-                serie_name = last_directory
+                elif len(pathname_splitted) == 3:
+                    category_name = pathname_splitted[0]
+                    subcategory_name = pathname_splitted[1]
+                    brand_name = pathname_splitted[2]
+                    serie_name = last_directory
 
-            elif len(pathname_splitted) == 4:
-                category_name = pathname_splitted[0]
-                subcategory_name = pathname_splitted[1]
-                brand_name = pathname_splitted[2]
-                serie_name = pathname_splitted[3]
-                type_name = last_directory
+                elif len(pathname_splitted) == 4:
+                    category_name = pathname_splitted[0]
+                    subcategory_name = pathname_splitted[1]
+                    brand_name = pathname_splitted[2]
+                    serie_name = pathname_splitted[3]
+                    type_name = last_directory
 
-            elif len(pathname_splitted) == 5:
-                category_name = pathname_splitted[0]
-                subcategory_name = pathname_splitted[1]
-                brand_name = pathname_splitted[2]
-                serie_name = pathname_splitted[3]
-                type_name = pathname_splitted[4]
-                type_name2 = last_directory
+                elif len(pathname_splitted) == 5:
+                    category_name = pathname_splitted[0]
+                    subcategory_name = pathname_splitted[1]
+                    brand_name = pathname_splitted[2]
+                    serie_name = pathname_splitted[3]
+                    type_name = pathname_splitted[4]
+                    type_name2 = last_directory
 
-            add_or_replace_to_products(product_id, product_name, image, price, quantity, description, category_name,
-                                       subcategory_name, brand_name, serie_name, type_name, type_name2)
-        try:
-            url = data["meta"]["nextHref"]
-            print(url)
-        except KeyError:
-            print("Достигнут конец данных, нет следующей страницы")
-            break
+                if product_id == "d92b34b6-8089-11ee-0a80-009a002f6f3b?expand=supplier":
+                    print(product_id)
+                    print(product_name)
+                    break
+
+                add_or_replace_to_products(product_id, product_name, image, price, quantity, description, category_name,
+                                           subcategory_name, brand_name, serie_name, type_name, type_name2)
+            try:
+                url = data["meta"]["nextHref"]
+                print(url)
+            except KeyError:
+                print("Достигнут конец данных, нет следующей страницы")
+                break
 
 
 fetch_data(base_url)
