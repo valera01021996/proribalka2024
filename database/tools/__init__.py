@@ -5,6 +5,8 @@ from .order_tools import OrderTools
 from .review_tools import ReviewTools
 from .drive_tools import DriveTools
 from .admin_tools import AdminTools
+from .products_bu_tools import ProductToolsBU
+
 
 class DBTools:
     def __init__(self):
@@ -15,3 +17,4 @@ class DBTools:
         self.review_tools: ReviewTools = ReviewTools()
         self.drive_tools: DriveTools = DriveTools()
         self.admin_tools: AdminTools = AdminTools()
+        self.product_tools_bu: ProductToolsBU = ProductToolsBU()

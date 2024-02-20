@@ -4,7 +4,7 @@ from database.tools import DBTools
 from keyboards.main_menu_keyboards import *
 from keyboards.cart_keyboards import *
 from aiogram.dispatcher.filters import Text
-
+from .main_menu_handlers import format_price
 
 @dp.callback_query_handler(
     lambda call: call.data.startswith("add-cart"), state=MenuLevels.products_menu
@@ -94,3 +94,28 @@ async def clear_cart(message: Message):
 async def back_to_main_menu(message: Message):
     chat_id = message.chat.id
     await bot.send_message(chat_id, "Главное меню", reply_markup=generate_main_menu())
+
+
+
+@dp.callback_query_handler(
+    lambda call: call.data.startswith("add-cart"), state=MenuLevels.bu_products_menu
+)
+async def add_cart_product(call: CallbackQuery):
+    chat_id = call.message.chat.id
+    _, product_id, current_qty = call.data.split("_")
+    current_qty = int(current_qty)
+    product_name = DBTools().product_tools_bu.get_bu_product_name_by_id(product_id)
+    pk, title, description, _, price, quantity = DBTools().product_tools_bu.get_bu_product_detail_info(product_name)
+    price = int(price)
+    user_id = DBTools().user_tools.get_user_id(chat_id)
+    cart_id = DBTools().cart_tools.get_active_cart(user_id)[0]
+    if current_qty != 0:
+        status_add = DBTools().cart_tools.add_cart_product(cart_id, pk, product_name, current_qty, current_qty * price)
+        print(status_add)
+        if status_add == True:
+            await bot.answer_callback_query(call.id, "Продукт успешно добавлен !")
+        else:
+            await bot.answer_callback_query(call.id, "Кол-во продукта изменено !")
+
+    else:
+        await bot.answer_callback_query(call.id, "Добавьте количество товара !")

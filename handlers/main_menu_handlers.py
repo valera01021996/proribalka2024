@@ -4,6 +4,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from keyboards.main_menu_keyboards import *
 from database.tools.product_tools import ProductTools
+from database.tools.products_bu_tools import ProductToolsBU
 
 
 # @dp.message_handler(state="*", commands=["start"])
@@ -39,6 +40,9 @@ async def show_subcategories_menu(message: Message, state: FSMContext):
     if message.text == "◀   Назад":
         await state.finish()
         await bot.send_message(chat_id, "Главное меню", reply_markup=generate_main_menu())
+
+    elif message.text == "Б/У":
+        await bot.send_message(chat_id, "Выберите категорию из Б/У", reply_markup=await generate_bu_categories_menu())
 
     elif message.text in ("Катушки", "Коптилки", "Пули", "Садки и Подсаки", "Сушилка для Рыбы"):
         await bot.send_message(chat_id, "Выберите бренд товара",
@@ -328,3 +332,155 @@ def format_price(price_str):
     formatted_price = f"{int(price_str):,}".replace(",", " ")
     return formatted_price
 
+
+@dp.message_handler(state=MenuLevels.bu_categories_menu)
+async def show_bu_subcategories_or_brands_menu(message: Message, state: FSMContext):
+    chat_id = message.chat.id
+    await state.update_data(bu_category_name=message.text)
+    category_name = message.text
+    if message.text == "◀   Назад":
+        await bot.send_message(chat_id, "Выберите категорию товара: ", reply_markup=await generate_categories_menu())
+
+    elif message.text in ("Катушки", "Удилища"):
+        await bot.send_message(chat_id, "Выберите бренд из Б/У",
+                               reply_markup=await generate_bu_brands_menu(category_name))
+
+    elif message.text in DBTools().product_tools_bu.get_categories():
+        await bot.send_message(chat_id, "Выберите подкатегорию из Б/У",
+                               reply_markup=await generate_bu_subcategories_menu(category_name))
+
+
+@dp.message_handler(state=MenuLevels.bu_subcategories_menu)
+async def show_bu_products_menu_without_brands(message: Message, state: FSMContext):
+    chat_id = message.chat.id
+    await state.update_data(bu_subcategory_name=message.text)
+    data = await state.get_data()
+    subcategory_name = message.text
+    category_name = data["bu_category_name"]
+    if message.text == "◀   Назад":
+        await bot.send_message(chat_id, "Выберите категорию из Б/У", reply_markup=await generate_bu_categories_menu())
+
+    elif message.text in DBTools().product_tools_bu.get_subcategories(category_name):
+        await bot.send_message(chat_id, "Выберите товар",
+                               reply_markup=await generate_bu_products_menu_without_brands(subcategory_name))
+
+
+@dp.message_handler(state=MenuLevels.bu_brands_menu)
+async def show_bu_series_or_products_menu(message: Message, state: FSMContext):
+    chat_id = message.chat.id
+    data = await state.get_data()
+    await state.update_data(bu_brand_name=message.text)
+    brand_name = message.text
+    category_name = data["bu_category_name"]
+    if message.text == "◀   Назад":
+        await bot.send_message(chat_id, "Выберите категорию из Б/У", reply_markup=await generate_bu_categories_menu())
+
+    elif message.text in DBTools().product_tools_bu.get_brands_without_subcategories(
+            category_name) and DBTools().product_tools_bu.get_series(brand_name) != ['']:
+        await bot.send_message(chat_id, "Выберите серию из Б/У", reply_markup=await generate_bu_series_menu(brand_name))
+
+    elif message.text in DBTools().product_tools_bu.get_brands_without_subcategories(category_name):
+        await bot.send_message(chat_id, "Выберите товар из Б/У",
+                               reply_markup=await generate_bu_products_menu_with_brands(brand_name))
+
+
+@dp.message_handler(state=MenuLevels.bu_series_menu)
+async def show_bu_products_menu(message: Message, state: FSMContext):
+    chat_id = message.chat.id
+    data = await state.get_data()
+    await state.update_data(bu_serie_name=message.text)
+    serie_name = message.text
+    brand_name = data["bu_brand_name"]
+    category_name = data["bu_category_name"]
+    if message.text == "◀   Назад":
+        await bot.send_message(chat_id, "Выберите бренд из Б/У",
+                               reply_markup=await generate_bu_brands_menu(category_name))
+
+    elif message.text in DBTools().product_tools_bu.get_series(brand_name):
+        await bot.send_message(chat_id, "Выберите товар из Б/У",
+                               reply_markup=await generate_bu_products_menu_with_series(brand_name, serie_name))
+
+
+@dp.message_handler(state=MenuLevels.bu_products_menu)
+async def show_bu_products_detail(message: Message, state: FSMContext):
+    chat_id = message.chat.id
+    data = await state.get_data()
+    brand_name = ""
+    serie_name = ""
+    subcategory_name = ""
+    try:
+        subcategory_name = data["bu_subcategory_name"]
+    except Exception as ex:
+        print(ex)
+    try:
+        brand_name = data["bu_brand_name"]
+    except Exception as ex:
+        print(ex)
+    try:
+        serie_name = data["bu_serie_name"]
+    except Exception as ex:
+        print(ex)
+    category_name = data["bu_category_name"]
+    if message.text == "◀   Назад" and DBTools().product_tools_bu.get_subcategories(category_name) != [
+        ""]:
+        await bot.send_message(chat_id, "Выберите подкатегорию товара",
+                               reply_markup=await generate_bu_subcategories_menu(category_name))
+
+    elif message.text == "◀   Назад" and DBTools().product_tools_bu.get_series(brand_name) != [""]:
+        await bot.send_message(chat_id, "Выберите серию из Б/У", reply_markup=await generate_bu_series_menu(brand_name))
+
+    elif message.text == "◀   Назад" and DBTools().product_tools_bu.get_series(brand_name) == [
+        ""] and DBTools().product_tools_bu.get_brands_without_subcategories(category_name) != [""]:
+        await bot.send_message(chat_id, "Выберите бренд из Б/У",
+                               reply_markup=await generate_bu_brands_menu(category_name))
+
+    elif message.text in ProductToolsBU.PRODUCTS:
+        pk, product_name, description, image, price, quantity = DBTools().product_tools_bu.get_bu_product_detail_info(
+            message.text)
+        price = format_price(price)
+
+        try:
+            with open(image, "rb") as photo:
+                await bot.send_photo(chat_id, photo, caption=f"<b>{product_name}</b>\n\n"
+                                                             f"Цена : {price} сум\n\n"
+                                                             f"{description}", parse_mode="HTML",
+                                     reply_markup=await generate_bu_detail_product_menu(pk, quantity))
+        except Exception as ex:
+            await bot.send_message(chat_id, f"<b>{product_name}</b>\n\n"
+                                            f"Цена : {price} сум\n\n"
+                                            f"{description}", parse_mode="HTML",
+                                   reply_markup=await generate_bu_detail_product_menu(pk, quantity))
+
+
+@dp.callback_query_handler(
+    lambda call: call.data.startswith("action"), state=MenuLevels.bu_products_menu
+)
+async def edit_count_product(call: CallbackQuery):
+    chat_id = call.message.chat.id
+    message_id = call.message.message_id
+    _, action, product_id, current_qty, quantity = call.data.split("_")
+    current_qty, quantity = int(current_qty), int(quantity)
+
+    if action == "minus" and current_qty > 0:
+        current_qty -= 1
+
+    elif action == "minus" and current_qty <= 0:
+        await bot.answer_callback_query(call.id, "Недопустимое значение !")
+        return
+
+    if action == "current":
+        await bot.answer_callback_query(call.id, "Текущее количество")
+        return
+
+    if action == "plus" and current_qty < quantity:
+        current_qty += 1
+
+    elif action == "plus" and current_qty >= quantity:
+        await bot.answer_callback_query(call.id, f"На складе есть : {current_qty}")
+        return
+
+    await bot.edit_message_reply_markup(chat_id, message_id,
+                                        reply_markup=await generate_bu_detail_product_menu(product_id,
+                                                                                           quantity,
+                                                                                           current_qty
+                                                                                           ))

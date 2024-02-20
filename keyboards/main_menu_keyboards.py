@@ -11,6 +11,11 @@ class MenuLevels(StatesGroup):
     products_menu = State()
     types_menu = State()
     types_menu2 = State()
+    bu_categories_menu = State()
+    bu_subcategories_menu = State()
+    bu_brands_menu = State()
+    bu_series_menu = State()
+    bu_products_menu = State()
 
 
 def generate_main_menu():
@@ -32,6 +37,7 @@ async def generate_categories_menu():
     markup = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
     categories = DBTools().product_tools.get_categories()
     markup.add(*categories)
+    markup.row("Б/У")
     markup.row(
         KeyboardButton(text="◀   Назад"),
         KeyboardButton(text="🏘   Главное меню")
@@ -221,4 +227,104 @@ async def generate_detail_product_menu(product_id: int, units_in_store: int,
         InlineKeyboardButton(text="🚀   Добавить в корзину", callback_data=f"add-cart_{product_id}_{current_qty}")
     )
     await MenuLevels.products_menu.set()
+    return markup
+
+
+async def generate_bu_categories_menu():
+    markup = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+    categories = DBTools().product_tools_bu.get_categories()
+    markup.add(*categories)
+    markup.row(
+        KeyboardButton(text="◀   Назад"),
+        KeyboardButton(text="🏘   Главное меню")
+    )
+    await MenuLevels.bu_categories_menu.set()
+    return markup
+
+
+async def generate_bu_subcategories_menu(category_name):
+    markup = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+    subcategories = DBTools().product_tools_bu.get_subcategories(category_name)
+    markup.add(*subcategories)
+    markup.row(
+        KeyboardButton(text="◀   Назад"),
+        KeyboardButton(text="🏘   Главное меню")
+    )
+    await MenuLevels.bu_subcategories_menu.set()
+    return markup
+
+
+async def generate_bu_brands_menu(category_name):
+    markup = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+    brands = DBTools().product_tools_bu.get_brands_without_subcategories(category_name)
+    markup.add(*brands)
+    markup.row(
+        KeyboardButton(text="◀   Назад"),
+        KeyboardButton(text="🏘   Главное меню")
+    )
+    await MenuLevels.bu_brands_menu.set()
+    return markup
+
+
+async def generate_bu_series_menu(brand_name):
+    markup = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+    series = DBTools().product_tools_bu.get_series(brand_name)
+    markup.add(*series)
+    markup.row(
+        KeyboardButton(text="◀   Назад"),
+        KeyboardButton(text="🏘   Главное меню")
+    )
+    await MenuLevels.bu_series_menu.set()
+    return markup
+
+
+async def generate_bu_products_menu_without_brands(subcategory_name):
+    markup = ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+    products = DBTools().product_tools_bu.get_products_without_brands(subcategory_name)
+    markup.add(*products)
+    markup.row(
+        KeyboardButton(text="◀   Назад"),
+        KeyboardButton(text="🏘   Главное меню")
+    )
+    await MenuLevels.bu_products_menu.set()
+    return markup
+
+
+async def generate_bu_products_menu_with_brands(brand_name):
+    markup = ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+    products = DBTools().product_tools_bu.get_products_with_brands(brand_name)
+    markup.add(*products)
+    markup.row(
+        KeyboardButton(text="◀   Назад"),
+        KeyboardButton(text="🏘   Главное меню")
+    )
+    await MenuLevels.bu_products_menu.set()
+    return markup
+
+
+async def generate_bu_products_menu_with_series(brand_name, serie_name):
+    markup = ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+    products = DBTools().product_tools_bu.get_products_with_series(brand_name, serie_name)
+    markup.add(*products)
+    markup.row(
+        KeyboardButton(text="◀   Назад"),
+        KeyboardButton(text="🏘   Главное меню")
+    )
+    await MenuLevels.bu_products_menu.set()
+    return markup
+
+
+async def generate_bu_detail_product_menu(product_id: int, units_in_store: int,
+                                          current_qty: int = 0) -> InlineKeyboardMarkup:
+    markup = InlineKeyboardMarkup()
+    markup.row(
+        InlineKeyboardButton(text="-", callback_data=f"action_minus_{product_id}_{current_qty}_{units_in_store}"),
+        InlineKeyboardButton(text=str(current_qty),
+                             callback_data=f"action_current_{product_id}_{current_qty}_{units_in_store}"),
+        InlineKeyboardButton(text="+", callback_data=f"action_plus_{product_id}_{current_qty}_{units_in_store}")
+    )
+    markup.row(
+        InlineKeyboardButton(text="🚀   Добавить в корзину", callback_data=f"add-cart_{product_id}_{current_qty}")
+    )
+    await MenuLevels.bu_products_menu.set()
     return markup

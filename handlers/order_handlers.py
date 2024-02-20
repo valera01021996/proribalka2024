@@ -8,6 +8,7 @@ from keyboards.order_keyboards import *
 from keyboards.main_menu_keyboards import generate_main_menu
 from find_address import get_address_via_coords
 
+
 class OrderForm(StatesGroup):
     cart_id = State()
     location = State()
@@ -68,26 +69,30 @@ async def success_confirm(message: Message, state: FSMContext):
         await bot.send_message(chat_id, "Ваш заказ принят😊 Ожидайте звонка", reply_markup=generate_main_menu())
         for admin_id in ADMINS:
             await bot.send_message(admin_id, text_admins)
-            await bot.send_location(admin_id, latitude=data["location"]["latitude"], longitude=data["location"]["longitude"])
+            await bot.send_location(admin_id, latitude=data["location"]["latitude"],
+                                    longitude=data["location"]["longitude"])
         DBTools().order_tools.create_order(cart_id)
         DBTools().cart_tools.change_order_status(cart_id)
         DBTools().cart_tools.register_cart(user_id)
         await minus_count(cart_products)
+        await minus_bu_count(cart_products)
         DBTools().product_tools.delete_product()
+        DBTools().product_tools_bu.delete_bu_product()
     else:
         await message.answer("Заказ отменен !", reply_markup=generate_main_menu())
         await state.finish()
 
 
 @dp.message_handler(state=OrderForm.location)
-async def check_location(message: Message, state:FSMContext):
+async def check_location(message: Message, state: FSMContext):
     chat_id = message.chat.id
     if message.text == "Отменить":
         await state.finish()
         await bot.send_message(chat_id, "Главное меню", reply_markup=generate_main_menu())
 
+
 @dp.message_handler(state=OrderForm.phone_number)
-async def check_location(message: Message, state:FSMContext):
+async def check_location(message: Message, state: FSMContext):
     chat_id = message.chat.id
     if message.text == "Отменить":
         await state.finish()
@@ -142,3 +147,9 @@ async def minus_count(cart_products):
     for tpl in cart_products:
         _, title, count, _ = tpl
         DBTools().product_tools.minus_count_units_in_store(count, title)
+
+
+async def minus_bu_count(cart_products):
+    for tpl in cart_products:
+        _, title, count, _ = tpl
+        DBTools().product_tools_bu.minus_bu_count_units_in_store(count, title)
