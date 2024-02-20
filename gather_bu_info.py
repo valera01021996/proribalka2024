@@ -75,70 +75,72 @@ def get_photo(url: str, title: str):
 
 
 def fetch_data(url):
-    while url:
-        response = session.get(url, auth=auth_credentials, timeout=(10, 30))
+    while True:
+        while url:
+            response = session.get(url, auth=auth_credentials, timeout=(10, 30))
 
-        data = response.json()
-        for dict_ in data["rows"]:
-            if "Б/У" in dict_["folder"]["pathName"] in dict_["folder"]["pathName"]:
-                """Для получения описания продукта и фото след три переменные"""
-                product_id = dict_["meta"]["href"].split("/")[-1]
-                product_url = f"https://api.moysklad.ru/api/remap/1.2/entity/product/{product_id}"
-                product_response = session.get(product_url, auth=auth_credentials, timeout=(10, 30))
-                """___________________________________________________________"""
+            data = response.json()
+            for dict_ in data["rows"]:
+                if "Б/У" in dict_["folder"]["pathName"] in dict_["folder"]["pathName"]:
+                    """Для получения описания продукта и фото след три переменные"""
+                    product_id = dict_["meta"]["href"].split("/")[-1]
+                    product_url = f"https://api.moysklad.ru/api/remap/1.2/entity/product/{product_id}"
+                    product_response = session.get(product_url, auth=auth_credentials, timeout=(10, 30))
+                    """___________________________________________________________"""
 
-                pathname_splitted = dict_["folder"]["pathName"][22:].split("/")
-                last_directory = dict_["folder"]["name"]
-                product_name = dict_["name"]
-                price = dict_["salePrice"] // 100
-                quantity = dict_["stock"]
-                category_name = ""
-                subcategory_name = ""
-                brand_name = ""
-                serie_name = ""
-                type_name = ""
-                description = ""
-                image = ""
+                    pathname_splitted = dict_["folder"]["pathName"][22:].split("/")
+                    last_directory = dict_["folder"]["name"]
+                    product_name = dict_["name"]
+                    price = dict_["salePrice"] // 100
+                    quantity = dict_["stock"]
+                    category_name = ""
+                    subcategory_name = ""
+                    brand_name = ""
+                    serie_name = ""
+                    type_name = ""
+                    description = ""
+                    image = ""
 
-                """Получаем описание и фотографию"""
-                if product_response.status_code == 200:
-                    print("Success")
-                    product_details = product_response.json()
-                    description = product_details.get("description", "")
-                    image_url = product_details.get("images", {}).get("meta", {}).get("href")
-                    try:
-                        image_url_download = \
-                            session.get(image_url, auth=auth_credentials, timeout=(10, 30)).json()["rows"][0].get(
-                                "meta",
-                                {}).get("downloadHref", {})
+                    """Получаем описание и фотографию"""
+                    if product_response.status_code == 200:
+                        print("Success")
+                        product_details = product_response.json()
+                        description = product_details.get("description", "")
+                        image_url = product_details.get("images", {}).get("meta", {}).get("href")
+                        try:
+                            image_url_download = \
+                                session.get(image_url, auth=auth_credentials, timeout=(10, 30)).json()["rows"][0].get(
+                                    "meta",
+                                    {}).get("downloadHref", {})
 
-                        image = get_photo(image_url_download, product_name)
-                    except Exception as ex:
-                        print(f"Ошибка при получении фото {ex}")
-                """__________________________________________"""
+                            image = get_photo(image_url_download, product_name)
+                        except Exception as ex:
+                            print(f"Ошибка при получении фото {ex}")
+                    """__________________________________________"""
 
-                if len(pathname_splitted) == 1 and pathname_splitted[0] != "Приманки":
-                    category_name = pathname_splitted[0]
-                    brand_name = last_directory
+                    if len(pathname_splitted) == 1 and pathname_splitted[0] != "Приманки":
+                        category_name = pathname_splitted[0]
+                        brand_name = last_directory
 
 
-                elif len(pathname_splitted) == 1 and pathname_splitted[0] == "Приманки":
-                    category_name = pathname_splitted[0]
-                    subcategory_name = last_directory
+                    elif len(pathname_splitted) == 1 and pathname_splitted[0] == "Приманки":
+                        category_name = pathname_splitted[0]
+                        subcategory_name = last_directory
 
-                elif len(pathname_splitted) == 2:
-                    category_name = pathname_splitted[0]
-                    brand_name = pathname_splitted[1]
-                    serie_name = last_directory
+                    elif len(pathname_splitted) == 2:
+                        category_name = pathname_splitted[0]
+                        brand_name = pathname_splitted[1]
+                        serie_name = last_directory
 
-                add_or_replace_to_products(product_id, product_name, image, price, quantity, description, category_name,
-                                           subcategory_name, brand_name, serie_name, type_name)
-        try:
-            url = data["meta"]["nextHref"]
-            print(url)
-        except KeyError:
-            print("Достигнут конец данных, нет следующей страницы")
-            break
+                    add_or_replace_to_products(product_id, product_name, image, price, quantity, description,
+                                               category_name,
+                                               subcategory_name, brand_name, serie_name, type_name)
+            try:
+                url = data["meta"]["nextHref"]
+                print(url)
+            except KeyError:
+                print("Достигнут конец данных, нет следующей страницы")
+                break
 
 
 fetch_data(base_url)
