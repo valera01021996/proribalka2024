@@ -290,9 +290,9 @@ async def generate_bu_products_menu_without_brands(subcategory_name):
     return markup
 
 
-async def generate_bu_products_menu_with_brands(brand_name):
+async def generate_bu_products_menu_with_brands(category_name, brand_name):
     markup = ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
-    products = DBTools().product_tools_bu.get_products_with_brands(brand_name)
+    products = DBTools().product_tools_bu.get_products_with_brands(category_name, brand_name)
     markup.add(*products)
     markup.row(
         KeyboardButton(text="◀   Назад"),

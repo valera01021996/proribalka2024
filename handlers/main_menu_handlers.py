@@ -381,7 +381,7 @@ async def show_bu_series_or_products_menu(message: Message, state: FSMContext):
 
     elif message.text in DBTools().product_tools_bu.get_brands_without_subcategories(category_name):
         await bot.send_message(chat_id, "Выберите товар из Б/У",
-                               reply_markup=await generate_bu_products_menu_with_brands(brand_name))
+                               reply_markup=await generate_bu_products_menu_with_brands(category_name, brand_name))
 
 
 @dp.message_handler(state=MenuLevels.bu_series_menu)
