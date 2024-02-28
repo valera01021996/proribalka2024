@@ -82,6 +82,8 @@ def fetch_data(url):
             data = response.json()
             for dict_ in data["rows"]:
                 if "Б/У" in dict_["folder"]["pathName"] in dict_["folder"]["pathName"]:
+                    if "Приманки" in dict_["folder"]["pathName"]:
+                        continue
                     """Для получения описания продукта и фото след три переменные"""
                     product_id = dict_["meta"]["href"].split("/")[-1]
                     product_url = f"https://api.moysklad.ru/api/remap/1.2/entity/product/{product_id}"
