@@ -8,7 +8,7 @@ load_dotenv()
 class SaveCounterparties(BaseTools):
 
     def do_request(self):
-        response = requests.get("https://online.moysklad.ru/api/remap/1.2/entity/counterparty",
+        response = requests.get("https://api.moysklad.ru/api/remap/1.2/entity/counterparty",
                                 auth=(os.getenv("LOGIN_MOYSKLAD"), os.getenv("PASSWORD_MOYSKLAD"))).json()
         return response
 
