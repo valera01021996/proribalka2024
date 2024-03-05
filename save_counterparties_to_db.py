@@ -1,7 +1,10 @@
+import datetime
+
 import requests
 from database.tools.base_tools import BaseTools
 from dotenv import load_dotenv
 import os
+
 load_dotenv()
 
 
@@ -45,12 +48,10 @@ class SaveCounterparties(BaseTools):
                 try:
                     try:
                         name = dict_["name"]
-                        print(name)
                     except:
                         name = "Нет имени"
                     try:
                         date_of_birth = dict_["description"]
-                        print(date_of_birth)
                     except:
                         date_of_birth = "Нет даты"
                     try:
@@ -82,10 +83,11 @@ class SaveCounterparties(BaseTools):
                 except Exception as ex:
                     print(ex)
 
-                print("Success")
 
         except Exception as ex:
             print(ex)
+
+        print(datetime.datetime.now())
 
 
 SaveCounterparties().gather_info_counterparty()
