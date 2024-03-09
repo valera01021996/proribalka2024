@@ -37,11 +37,15 @@ async def show_bonus(message: Message, state: FSMContext):
     print(phone_number)
     await register_phone_number(phone_number, chat_id)
     await state.finish()
-    bonus = int(DBTools().drive_tools.select_bonus_of_user(phone_number))
-    formatted_bonus = f"{bonus:,}".replace(",", " ")
+    try:
+        bonus = int(DBTools().drive_tools.select_bonus_of_user(phone_number))
+        formatted_bonus = f"{bonus:,}".replace(",", " ")
 
-    await bot.send_message(chat_id, f"У вас накопилось : {formatted_bonus} баллов \nНапоминаем: 1 балл = 1 сум",
-                           reply_markup=generate_main_menu())
+        await bot.send_message(chat_id, f"У вас накопилось : {formatted_bonus} баллов \nНапоминаем: 1 балл = 1 сум",
+                               reply_markup=generate_main_menu())
+    except Exception as ex:
+        print(ex)
+        await bot.send_message(chat_id, "Нет бонусов по вашему номеру телефона.", reply_markup=generate_main_menu())
 
 
 async def register_phone_number(phone_number, chat_id):
