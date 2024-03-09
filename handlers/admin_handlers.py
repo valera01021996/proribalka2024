@@ -7,7 +7,7 @@ from keyboards.admin_keyboards import *
 from keyboards.main_menu_keyboards import generate_main_menu
 from aiogram.dispatcher.filters import Text
 from aiogram import types
-from config import ADMINS
+from config import ADMINISTRATORS
 
 
 class Form(StatesGroup):
@@ -21,7 +21,7 @@ media = MediaGroup()
 @dp.message_handler(commands=["proribalka"])
 async def admin_panel(message: Message):
     chat_id = message.chat.id
-    if chat_id not in ADMINS:
+    if chat_id not in ADMINISTRATORS:
         return await message.reply("У вас нет доступа !")
     await Form.waiting_for_text.set()
     await message.reply("Введите текст для сообщения:")
