@@ -31,6 +31,7 @@ def setup_session():
 
 session = setup_session()
 
+received_product_ids = []
 
 def add_or_replace_to_products(product_id, product_name, image, price, quantity, description, category_name,
                                subcategory_name, brand_name, serie_name, type_name, type_name2):
@@ -78,122 +79,147 @@ def get_photo(url: str, title: str):
 
 
 def fetch_data(url):
-    while True:
-        while url:
-            response = session.get(url, auth=auth_credentials, timeout=(10, 30))
+    received_product_ids.clear()
+    # while True:
+    while url:
+        response = session.get(url, auth=auth_credentials, timeout=(10, 30))
 
-            data = response.json()
-            for dict_ in data["rows"]:
-                if "Б/У" in dict_["folder"]["pathName"] or "Материалы для Производства" in dict_["folder"]["pathName"]:
-                    continue
+        data = response.json()
+        for dict_ in data["rows"]:
+            if "Б/У" in dict_["folder"]["pathName"] or "Материалы для Производства" in dict_["folder"]["pathName"]:
+                continue
 
-                """Для получения описания продукта и фото след три переменные"""
-                product_id = dict_["meta"]["href"].split("/")[-1]
+            """Для получения описания продукта и фото след три переменные"""
+            product_id = dict_["meta"]["href"].split("/")[-1]
+            received_product_ids.append(product_id)
+            print(product_id)
+            product_url = f"https://api.moysklad.ru/api/remap/1.2/entity/product/{product_id}"
+            product_response = session.get(product_url, auth=auth_credentials, timeout=(10, 30))
+            """___________________________________________________________"""
+
+            pathname_splitted = dict_["folder"]["pathName"][18:].split("/")
+            last_directory = dict_["folder"]["name"]
+            product_name = dict_["name"]
+            price = dict_["salePrice"] // 100
+            quantity = dict_["stock"]
+            category_name = ""
+            subcategory_name = ""
+            brand_name = ""
+            serie_name = ""
+            type_name = ""
+            type_name2 = ""
+            description = ""
+            image = ""
+
+            """Получаем описание и фотографию"""
+            if product_response.status_code == 200:
+                print("Success")
+                product_details = product_response.json()
+                description = product_details.get("description", "")
+                image_url = product_details.get("images", {}).get("meta", {}).get("href")
+                try:
+                    image_url_download = \
+                    session.get(image_url, auth=auth_credentials, timeout=(10, 30)).json()["rows"][0].get(
+                        "meta",
+                        {}).get("downloadHref", {})
+
+                    image = get_photo(image_url_download, product_name)
+                except Exception as ex:
+                    print(f"Ошибка при получении фото {ex}")
+            """__________________________________________"""
+
+            if len(pathname_splitted) == 1 and pathname_splitted[0] == "Коптилки" or pathname_splitted[0] == "Пули" \
+                    or pathname_splitted[0] == "Садки и Подсаки":
+                category_name = pathname_splitted[0]
+                brand_name = last_directory
+            elif len(
+                    pathname_splitted) == 1 and last_directory == "Креветочницы" or last_directory == "Подарочные Сертификаты PROрыбалка" \
+                    or last_directory == "Рогатки":
+
+                category_name = last_directory
+
+            elif len(pathname_splitted) == 1:
+
+                category_name = pathname_splitted[0]
+                subcategory_name = last_directory
+
+            elif len(pathname_splitted) == 2 and pathname_splitted[0] == "Катушки":
+                category_name = pathname_splitted[0]
+                brand_name = pathname_splitted[1]
+                serie_name = last_directory
+
+            elif len(pathname_splitted) == 2:
+                category_name = pathname_splitted[0]
+                subcategory_name = pathname_splitted[1]
+                brand_name = last_directory
+
+            elif len(pathname_splitted) == 3 and pathname_splitted[0] == "Катушки":
+                category_name = pathname_splitted[0]
+                brand_name = pathname_splitted[1]
+                serie_name = pathname_splitted[2]
+                type_name = last_directory
+
+            elif len(pathname_splitted) == 3:
+                category_name = pathname_splitted[0]
+                subcategory_name = pathname_splitted[1]
+                brand_name = pathname_splitted[2]
+                serie_name = last_directory
+
+            elif len(pathname_splitted) == 4:
+                category_name = pathname_splitted[0]
+                subcategory_name = pathname_splitted[1]
+                brand_name = pathname_splitted[2]
+                serie_name = pathname_splitted[3]
+                type_name = last_directory
+
+            elif len(pathname_splitted) == 5:
+                category_name = pathname_splitted[0]
+                subcategory_name = pathname_splitted[1]
+                brand_name = pathname_splitted[2]
+                serie_name = pathname_splitted[3]
+                type_name = pathname_splitted[4]
+                type_name2 = last_directory
+
+            if product_id == "d92b34b6-8089-11ee-0a80-009a002f6f3b?expand=supplier":
                 print(product_id)
-                product_url = f"https://api.moysklad.ru/api/remap/1.2/entity/product/{product_id}"
-                product_response = session.get(product_url, auth=auth_credentials, timeout=(10, 30))
-                """___________________________________________________________"""
-
-                pathname_splitted = dict_["folder"]["pathName"][18:].split("/")
-                last_directory = dict_["folder"]["name"]
-                product_name = dict_["name"]
-                price = dict_["salePrice"] // 100
-                quantity = dict_["stock"]
-                category_name = ""
-                subcategory_name = ""
-                brand_name = ""
-                serie_name = ""
-                type_name = ""
-                type_name2 = ""
-                description = ""
-                image = ""
-
-                """Получаем описание и фотографию"""
-                if product_response.status_code == 200:
-                    print("Success")
-                    product_details = product_response.json()
-                    description = product_details.get("description", "")
-                    image_url = product_details.get("images", {}).get("meta", {}).get("href")
-                    try:
-                        image_url_download = \
-                        session.get(image_url, auth=auth_credentials, timeout=(10, 30)).json()["rows"][0].get(
-                            "meta",
-                            {}).get("downloadHref", {})
-
-                        image = get_photo(image_url_download, product_name)
-                    except Exception as ex:
-                        print(f"Ошибка при получении фото {ex}")
-                """__________________________________________"""
-
-                if len(pathname_splitted) == 1 and pathname_splitted[0] == "Коптилки" or pathname_splitted[0] == "Пули" \
-                        or pathname_splitted[0] == "Садки и Подсаки":
-                    category_name = pathname_splitted[0]
-                    brand_name = last_directory
-                elif len(
-                        pathname_splitted) == 1 and last_directory == "Креветочницы" or last_directory == "Подарочные Сертификаты PROрыбалка" \
-                        or last_directory == "Рогатки":
-
-                    category_name = last_directory
-
-                elif len(pathname_splitted) == 1:
-
-                    category_name = pathname_splitted[0]
-                    subcategory_name = last_directory
-
-                elif len(pathname_splitted) == 2 and pathname_splitted[0] == "Катушки":
-                    category_name = pathname_splitted[0]
-                    brand_name = pathname_splitted[1]
-                    serie_name = last_directory
-
-                elif len(pathname_splitted) == 2:
-                    category_name = pathname_splitted[0]
-                    subcategory_name = pathname_splitted[1]
-                    brand_name = last_directory
-
-                elif len(pathname_splitted) == 3 and pathname_splitted[0] == "Катушки":
-                    category_name = pathname_splitted[0]
-                    brand_name = pathname_splitted[1]
-                    serie_name = pathname_splitted[2]
-                    type_name = last_directory
-
-                elif len(pathname_splitted) == 3:
-                    category_name = pathname_splitted[0]
-                    subcategory_name = pathname_splitted[1]
-                    brand_name = pathname_splitted[2]
-                    serie_name = last_directory
-
-                elif len(pathname_splitted) == 4:
-                    category_name = pathname_splitted[0]
-                    subcategory_name = pathname_splitted[1]
-                    brand_name = pathname_splitted[2]
-                    serie_name = pathname_splitted[3]
-                    type_name = last_directory
-
-                elif len(pathname_splitted) == 5:
-                    category_name = pathname_splitted[0]
-                    subcategory_name = pathname_splitted[1]
-                    brand_name = pathname_splitted[2]
-                    serie_name = pathname_splitted[3]
-                    type_name = pathname_splitted[4]
-                    type_name2 = last_directory
-
-                if product_id == "d92b34b6-8089-11ee-0a80-009a002f6f3b?expand=supplier":
-                    print(product_id)
-                    print(product_name)
-                    break
-
-                add_or_replace_to_products(product_id, product_name, image, price, quantity, description, category_name,
-                                           subcategory_name, brand_name, serie_name, type_name, type_name2)
-            try:
-                url = data["meta"]["nextHref"]
-                print(url)
-            except KeyError:
-                print("Достигнут конец данных, нет следующей страницы")
+                print(product_name)
                 break
 
+            add_or_replace_to_products(product_id, product_name, image, price, quantity, description, category_name,
+                                       subcategory_name, brand_name, serie_name, type_name, type_name2)
+        try:
+            url = data["meta"]["nextHref"]
+            print(url)
+        except KeyError:
+            print("Достигнут конец данных, нет следующей страницы")
+            break
 
-fetch_data(base_url)
 
+def remove_missing_products():
+    try:
+        if received_product_ids:  # Убедимся, что список не пустой
+            received_product_ids_str = ','.join(f"'{product_id}'" for product_id in received_product_ids)
+            cursor.execute(f"DELETE FROM products WHERE product_id NOT IN ({received_product_ids_str})")
+            print("Удалены товары, которых нет в полученных данных")
+        else:
+            print("Нет товаров для удаления")
+    except Exception as ex:
+        print(f"Ошибка при удалении товаров: {ex}")
+    else:
+        connection.commit()
+
+
+# fetch_data(base_url)
+def run_update_loop(interval=600):  # Интервал обновления в секундах (10 минут по умолчанию)
+    while True:
+        print("Начало обновления базы данных...")
+        fetch_data(base_url)  # Получаем данные с API
+        remove_missing_products()  # Удаляем отсутствующие товары
+        print(f"База данных обновлена. Ожидание {interval} секунд до следующего обновления.")
+        time.sleep(interval)  # Задержка перед следующим обновлением
+
+# Запуск основного цикла обновления
+run_update_loop()
 # response = requests.get("https://online.moysklad.ru/api/remap/1.2/download/a844e50b-9780-49ec-9aac-18c746da2dc8", auth=auth_credentials)
 # image = response.content
 # with open("media/images/test.jpg", "wb") as file:
