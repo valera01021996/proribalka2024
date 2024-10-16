@@ -1,20 +1,34 @@
 import requests
 from requests.auth import HTTPBasicAuth
-from database.utils import connect_to_database
 import os
 import time
 from dotenv import load_dotenv
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 from requests import Session
+import pymysql
 
 load_dotenv()
 
 base_url = "https://api.moysklad.ru/api/remap/1.2/report/stock/all"
-connection, cursor = connect_to_database()
+# connection, cursor = connect_to_database()
 auth_credentials = HTTPBasicAuth(os.getenv("LOGIN_MOYSKLAD"), os.getenv("PASSWORD_MOYSKLAD"))
 
 received_product_ids = []
+
+
+def connect_to_database() -> tuple:
+    connection = pymysql.connect(
+        host="localhost",
+        database="proribalka",
+        user="proribalka",
+        password="twix3327348"
+    )
+    cursor = connection.cursor()
+    return connection, cursor
+
+
+connection, cursor = connect_to_database()
 
 
 def setup_session():
