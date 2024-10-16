@@ -1,20 +1,34 @@
 import requests
 from requests.auth import HTTPBasicAuth
-from database.utils import connect_to_database
+# from database.utils import connect_to_database
 import os
 import time
 from dotenv import load_dotenv
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 from requests import Session
+import pymysql
 
 load_dotenv()
 
 # base_url = "https://online.moysklad.ru/api/remap/1.2/report/stock/all"
 base_url = "https://api.moysklad.ru/api/remap/1.2/report/stock/all"
 
-connection, cursor = connect_to_database()
 auth_credentials = HTTPBasicAuth(os.getenv("LOGIN_MOYSKLAD"), os.getenv("PASSWORD_MOYSKLAD"))
+
+
+def connect_to_database() -> tuple:
+    connection = pymysql.connect(
+        host="localhost",
+        database="proribalka",
+        user="proribalka",
+        password="twix3327348"
+    )
+    cursor = connection.cursor()
+    return connection, cursor
+
+
+connection, cursor = connect_to_database()
 
 
 def setup_session():
@@ -32,6 +46,7 @@ def setup_session():
 session = setup_session()
 
 received_product_ids = []
+
 
 def add_or_replace_to_products(product_id, product_name, image, price, quantity, description, category_name,
                                subcategory_name, brand_name, serie_name, type_name, type_name2):
@@ -119,9 +134,9 @@ def fetch_data(url):
                 image_url = product_details.get("images", {}).get("meta", {}).get("href")
                 try:
                     image_url_download = \
-                    session.get(image_url, auth=auth_credentials, timeout=(10, 30)).json()["rows"][0].get(
-                        "meta",
-                        {}).get("downloadHref", {})
+                        session.get(image_url, auth=auth_credentials, timeout=(10, 30)).json()["rows"][0].get(
+                            "meta",
+                            {}).get("downloadHref", {})
 
                     image = get_photo(image_url_download, product_name)
                 except Exception as ex:
@@ -217,6 +232,7 @@ def run_update_loop(interval=600):  # Интервал обновления в �
         remove_missing_products()  # Удаляем отсутствующие товары
         print(f"База данных обновлена. Ожидание {interval} секунд до следующего обновления.")
         time.sleep(interval)  # Задержка перед следующим обновлением
+
 
 # Запуск основного цикла обновления
 run_update_loop()
